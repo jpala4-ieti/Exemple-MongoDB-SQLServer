@@ -1,7 +1,7 @@
 /**
  * HTTP client that fetches game data from the mock REST API.
  *
- * Supports both individual endpoints and the combined /schema endpoint.
+ * All collection endpoints and schema keys use the XCOOP42_ prefix.
  */
 
 const axios = require("axios");
@@ -16,10 +16,7 @@ const client = axios.create({
 
 client.interceptors.response.use(
   (res) => {
-    logger.debug(
-      { status: res.status, url: res.config.url },
-      "API response"
-    );
+    logger.debug({ status: res.status, url: res.config.url }, "API response");
     return res;
   },
   (err) => {
@@ -34,34 +31,44 @@ client.interceptors.response.use(
 // ── Fetch everything at once via /schema ─────────────────────────────────────
 async function fetchSchema() {
   const { data } = await client.get("/schema");
-  return data.data; // { categories, players, games, movements, levelRecords, lobby }
+  const raw = data.data;
+
+  // Return normalised keys so the sync script doesn't need to know the prefix
+  return {
+    categories: raw.xcoop42_categories,
+    players: raw.xcoop42_players,
+    games: raw.xcoop42_games,
+    movements: raw.xcoop42_movements,
+    levelRecords: raw.xcoop42_level_records,
+    lobby: raw.xcoop42_lobby,
+  };
 }
 
 // ── Individual endpoints ─────────────────────────────────────────────────────
 async function fetchCategories() {
-  const { data } = await client.get("/categories");
+  const { data } = await client.get("/xcoop42_categories");
   return data.data;
 }
 
 async function fetchPlayers() {
-  const { data } = await client.get("/players");
+  const { data } = await client.get("/xcoop42_players");
   return data.data;
 }
 
 async function fetchGames() {
-  const { data } = await client.get("/games");
+  const { data } = await client.get("/xcoop42_games");
   return data.data;
 }
 
 async function fetchMovements(gameId) {
-  const { data } = await client.get("/movements", {
+  const { data } = await client.get("/xcoop42_movements", {
     params: gameId ? { gameId } : {},
   });
   return data.data;
 }
 
 async function fetchLevelRecords() {
-  const { data } = await client.get("/level-records");
+  const { data } = await client.get("/xcoop42_level_records");
   return data.data;
 }
 

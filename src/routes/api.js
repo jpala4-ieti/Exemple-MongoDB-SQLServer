@@ -1,14 +1,17 @@
 /**
  * REST API routes – serves mock game data.
  *
+ * Collection keys use the XCOOP42_ prefix to avoid collisions
+ * with any existing data in downstream systems.
+ *
  * Endpoints:
- *   GET /api/schema          → full schema (all collections at once)
- *   GET /api/categories      → player categories
- *   GET /api/players         → players
- *   GET /api/games           → game sessions       (?status=)
- *   GET /api/movements       → player movements    (?gameId=)
- *   GET /api/level-records   → completion records   (?level=)
- *   GET /api/lobby           → current WebSocket lobby
+ *   GET /api/schema                → full schema (all collections at once)
+ *   GET /api/xcoop42_categories    → player categories
+ *   GET /api/xcoop42_players       → players
+ *   GET /api/xcoop42_games         → game sessions       (?status=)
+ *   GET /api/xcoop42_movements     → player movements    (?gameId=)
+ *   GET /api/xcoop42_level_records → completion records   (?level=)
+ *   GET /api/xcoop42_lobby         → current WebSocket lobby
  */
 
 const { Router } = require("express");
@@ -26,32 +29,32 @@ function wrap(data) {
   };
 }
 
-// ── GET /api/schema — everything at once ─────────────────────────────────────
+// ── GET /api/schema — everything at once (prefixed keys) ─────────────────────
 router.get("/schema", (_req, res) => {
   res.json(
     wrap({
-      categories: store.categories,
-      players: store.players,
-      games: store.games,
-      movements: store.movements,
-      levelRecords: store.levelRecords,
-      lobby: store.lobby,
+      xcoop42_categories: store.categories,
+      xcoop42_players: store.players,
+      xcoop42_games: store.games,
+      xcoop42_movements: store.movements,
+      xcoop42_level_records: store.levelRecords,
+      xcoop42_lobby: store.lobby,
     })
   );
 });
 
-// ── GET /api/categories ──────────────────────────────────────────────────────
-router.get("/categories", (_req, res) => {
+// ── GET /api/xcoop42_categories ──────────────────────────────────────────────
+router.get("/xcoop42_categories", (_req, res) => {
   res.json(wrap(store.categories));
 });
 
-// ── GET /api/players ─────────────────────────────────────────────────────────
-router.get("/players", (_req, res) => {
+// ── GET /api/xcoop42_players ─────────────────────────────────────────────────
+router.get("/xcoop42_players", (_req, res) => {
   res.json(wrap(store.players));
 });
 
-// ── GET /api/games ───────────────────────────────────────────────────────────
-router.get("/games", (req, res) => {
+// ── GET /api/xcoop42_games ───────────────────────────────────────────────────
+router.get("/xcoop42_games", (req, res) => {
   let result = store.games;
   if (req.query.status) {
     result = result.filter((g) => g.status === req.query.status);
@@ -59,8 +62,8 @@ router.get("/games", (req, res) => {
   res.json(wrap(result));
 });
 
-// ── GET /api/movements ───────────────────────────────────────────────────────
-router.get("/movements", (req, res) => {
+// ── GET /api/xcoop42_movements ───────────────────────────────────────────────
+router.get("/xcoop42_movements", (req, res) => {
   let result = store.movements;
   if (req.query.gameId) {
     result = result.filter((m) => m.gameId === req.query.gameId);
@@ -68,8 +71,8 @@ router.get("/movements", (req, res) => {
   res.json(wrap(result));
 });
 
-// ── GET /api/level-records ───────────────────────────────────────────────────
-router.get("/level-records", (req, res) => {
+// ── GET /api/xcoop42_level_records ───────────────────────────────────────────
+router.get("/xcoop42_level_records", (req, res) => {
   let result = store.levelRecords;
   if (req.query.level) {
     const level = parseInt(req.query.level, 10);
@@ -78,8 +81,8 @@ router.get("/level-records", (req, res) => {
   res.json(wrap(result));
 });
 
-// ── GET /api/lobby ───────────────────────────────────────────────────────────
-router.get("/lobby", (_req, res) => {
+// ── GET /api/xcoop42_lobby ───────────────────────────────────────────────────
+router.get("/xcoop42_lobby", (_req, res) => {
   res.json(wrap(store.lobby));
 });
 

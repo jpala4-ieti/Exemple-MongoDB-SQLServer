@@ -1,5 +1,8 @@
 # API & WebSocket Documentation
 
+> All collection names and SQL table names use the **XCOOP42_** prefix
+> to avoid collisions with existing data.
+
 ## REST Endpoints
 
 All REST endpoints return a standard envelope:
@@ -8,7 +11,7 @@ All REST endpoints return a standard envelope:
 {
   "success": true,
   "count": 4,
-  "timestamp": "2026-04-29T12:00:00.000Z",
+  "timestamp": "2026-04-30T12:00:00.000Z",
   "data": [ ... ]
 }
 ```
@@ -17,27 +20,27 @@ All REST endpoints return a standard envelope:
 
 ### `GET /api/schema` — Full schema (everything at once)
 
-Returns all collections in a single response:
+Returns all collections in a single response with prefixed keys:
 
 ```json
 {
   "success": true,
   "count": 1,
-  "timestamp": "2026-04-29T12:00:00.000Z",
+  "timestamp": "2026-04-30T12:00:00.000Z",
   "data": {
-    "categories": [ ... ],
-    "players": [ ... ],
-    "games": [ ... ],
-    "movements": [ ... ],
-    "levelRecords": [ ... ],
-    "lobby": [ ... ]
+    "xcoop42_categories": [ ... ],
+    "xcoop42_players": [ ... ],
+    "xcoop42_games": [ ... ],
+    "xcoop42_movements": [ ... ],
+    "xcoop42_level_records": [ ... ],
+    "xcoop42_lobby": [ ... ]
   }
 }
 ```
 
 ---
 
-### `GET /api/categories`
+### `GET /api/xcoop42_categories`
 
 ```json
 {
@@ -51,7 +54,7 @@ Returns all collections in a single response:
 
 ---
 
-### `GET /api/players`
+### `GET /api/xcoop42_players`
 
 ```json
 {
@@ -72,7 +75,7 @@ Returns all collections in a single response:
 
 ---
 
-### `GET /api/games` — `?status=completed|in_progress|waiting|abandoned`
+### `GET /api/xcoop42_games` — `?status=completed|in_progress|waiting|abandoned`
 
 ```json
 {
@@ -95,7 +98,7 @@ Returns all collections in a single response:
 
 ---
 
-### `GET /api/movements` — `?gameId=<id>`
+### `GET /api/xcoop42_movements` — `?gameId=<id>`
 
 ```json
 {
@@ -118,7 +121,7 @@ Possible `action` values: `move_left`, `move_right`, `jump`, `pick_key`, `open_d
 
 ---
 
-### `GET /api/level-records` — `?level=<int>`
+### `GET /api/xcoop42_level_records` — `?level=<int>`
 
 ```json
 {
@@ -137,17 +140,41 @@ Possible `action` values: `move_left`, `move_right`, `jump`, `pick_key`, `open_d
 
 ---
 
-### `GET /api/lobby`
+### `GET /api/xcoop42_lobby`
 
 Returns players currently connected via WebSocket.
 
 ```json
 {
   "data": [
-    { "nickname": "NewPlayer", "categoryCode": "JUN", "joinedAt": "2026-04-29T14:00:00.000Z" }
+    { "nickname": "NewPlayer", "categoryCode": "JUN", "joinedAt": "2026-04-30T14:00:00.000Z" }
   ]
 }
 ```
+
+---
+
+## SQL Server Tables (Navision)
+
+All tables use the `XCOOP42_` prefix:
+
+| Table                          | Description                              |
+|--------------------------------|------------------------------------------|
+| `XCOOP42_PlayerCategory`       | JUN / SEN / EXP tier definitions         |
+| `XCOOP42_Player`               | Player master data with FK to category   |
+| `XCOOP42_Game`                 | Game session headers                     |
+| `XCOOP42_GamePlayer`           | Many-to-many: players in games           |
+| `XCOOP42_Movement`             | Detailed action log                      |
+| `XCOOP42_LevelRecord`          | Level completion times                   |
+| `XCOOP42_LevelRecordPlayer`    | Many-to-many: players in level records   |
+
+### ERP Indicator Views
+
+| View                                         | Description                       |
+|----------------------------------------------|-----------------------------------|
+| `XCOOP42_vw_LevelsCompletedByCategory`       | Levels by player category         |
+| `XCOOP42_vw_AvgTimePerLevel`                 | Avg/best/worst time per level     |
+| `XCOOP42_vw_PlayerRecords`                   | Player dashboard + personal bests |
 
 ---
 
@@ -181,19 +208,3 @@ All messages are JSON. The `type` field determines the message kind.
 | `chat_message`   | `nickname`, `message`, `timestamp`    | Broadcast chat                  |
 | `error`          | `message`                             | Sent on validation errors       |
 | `goodbye`        | `message`                             | Sent after voluntary leave      |
-
-### Example session
-
-```
-Client: {"type":"register","nickname":"TestPlayer"}
-Server: {"type":"welcome","playerId":"abc123","nickname":"TestPlayer","lobby":[...]}
-
-Client: {"type":"move","action":"move_right","positionX":100,"positionY":64}
-Server: {"type":"player_moved","nickname":"TestPlayer","action":"move_right",...}
-
-Client: {"type":"chat","message":"Hello team!"}
-Server: {"type":"chat_message","nickname":"TestPlayer","message":"Hello team!",...}
-
-Client: {"type":"leave"}
-Server: {"type":"goodbye","message":"You have left the lobby"}
-```

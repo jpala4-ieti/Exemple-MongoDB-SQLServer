@@ -3,9 +3,8 @@
 /**
  * Sync Script: Mock API → SQL Server (Navision)
  *
- * Fetches all game data from the local mock REST API (via /api/schema
- * for a single round-trip, or individual endpoints as fallback),
- * then upserts into Navision SQL Server tables.
+ * Fetches all game data from the local mock REST API and upserts
+ * into Navision SQL Server tables prefixed with XCOOP42_.
  *
  * Run:  npm run sync   (server must be running: npm start)
  */
@@ -23,7 +22,7 @@ async function resolvePlayerId(pool, nickname) {
   const r = await pool
     .request()
     .input("nickname", sql.NVarChar(100), nickname)
-    .query("SELECT [Id] FROM [dbo].[Player] WHERE [Nickname] = @nickname");
+    .query("SELECT [Id] FROM [dbo].[XCOOP42_Player] WHERE [Nickname] = @nickname");
   const id = r.recordset[0]?.Id ?? null;
   if (id) playerIdCache.set(nickname, id);
   return id;
@@ -34,7 +33,7 @@ async function resolveGameId(pool, mongoId) {
   const r = await pool
     .request()
     .input("mongoId", sql.NVarChar(50), mongoId)
-    .query("SELECT [Id] FROM [dbo].[Game] WHERE [MongoId] = @mongoId");
+    .query("SELECT [Id] FROM [dbo].[XCOOP42_Game] WHERE [MongoId] = @mongoId");
   const id = r.recordset[0]?.Id ?? null;
   if (id) gameIdCache.set(mongoId, id);
   return id;
@@ -53,7 +52,7 @@ async function syncCategories(pool, categories) {
       .input("name", sql.NVarChar(50), cat.name)
       .input("minGames", sql.Int, cat.minGamesPlayed)
       .query(`
-        MERGE [dbo].[PlayerCategory] AS target
+        MERGE [dbo].[XCOOP42_PlayerCategory] AS target
         USING (SELECT @code AS [Code]) AS source ON target.[Code] = source.[Code]
         WHEN MATCHED THEN UPDATE SET [Name]=@name, [MinGamesPlayed]=@minGames
         WHEN NOT MATCHED THEN INSERT ([Code],[Name],[MinGamesPlayed]) VALUES (@code,@name,@minGames);
@@ -76,7 +75,7 @@ async function syncPlayers(pool, players) {
       .input("createdAt", sql.DateTime2, new Date(p.createdAt))
       .input("updatedAt", sql.DateTime2, p.updatedAt ? new Date(p.updatedAt) : null)
       .query(`
-        MERGE [dbo].[Player] AS target
+        MERGE [dbo].[XCOOP42_Player] AS target
         USING (SELECT @nickname AS [Nickname]) AS source ON target.[Nickname] = source.[Nickname]
         WHEN MATCHED THEN
           UPDATE SET [MongoId]=@mongoId,[CategoryCode]=@categoryCode,
@@ -109,7 +108,7 @@ async function syncGames(pool, games) {
       .input("finishedAt", sql.DateTime2, g.finishedAt ? new Date(g.finishedAt) : null)
       .input("totalDuration", sql.Int, g.totalDurationSeconds ?? null)
       .query(`
-        MERGE [dbo].[Game] AS target
+        MERGE [dbo].[XCOOP42_Game] AS target
         USING (SELECT @mongoId AS [MongoId]) AS source ON target.[MongoId] = source.[MongoId]
         WHEN MATCHED THEN
           UPDATE SET [Status]=@status,[PlayerCount]=@playerCount,[CurrentLevel]=@currentLevel,
@@ -134,8 +133,8 @@ async function syncGames(pool, games) {
         .input("playerId", sql.Int, playerId)
         .input("joinedAt", sql.DateTime2, gp.joinedAt ? new Date(gp.joinedAt) : null)
         .query(`
-          IF NOT EXISTS (SELECT 1 FROM [dbo].[GamePlayer] WHERE [GameId]=@gameId AND [PlayerId]=@playerId)
-          INSERT INTO [dbo].[GamePlayer] ([GameId],[PlayerId],[JoinedAt]) VALUES (@gameId,@playerId,@joinedAt);
+          IF NOT EXISTS (SELECT 1 FROM [dbo].[XCOOP42_GamePlayer] WHERE [GameId]=@gameId AND [PlayerId]=@playerId)
+          INSERT INTO [dbo].[XCOOP42_GamePlayer] ([GameId],[PlayerId],[JoinedAt]) VALUES (@gameId,@playerId,@joinedAt);
         `);
     }
   }
@@ -161,8 +160,8 @@ async function syncMovements(pool, movements) {
       .input("level", sql.Int, m.level ?? 1)
       .input("ts", sql.DateTime2, new Date(m.timestamp))
       .query(`
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Movement] WHERE [MongoId]=@mongoId)
-        INSERT INTO [dbo].[Movement] ([MongoId],[GameId],[PlayerId],[Action],[PositionX],[PositionY],[Level],[Timestamp])
+        IF NOT EXISTS (SELECT 1 FROM [dbo].[XCOOP42_Movement] WHERE [MongoId]=@mongoId)
+        INSERT INTO [dbo].[XCOOP42_Movement] ([MongoId],[GameId],[PlayerId],[Action],[PositionX],[PositionY],[Level],[Timestamp])
         VALUES (@mongoId,@gameId,@playerId,@action,@posX,@posY,@level,@ts);
       `);
   }
@@ -183,15 +182,15 @@ async function syncLevelRecords(pool, records) {
       .input("completionTime", sql.Float, lr.completionTimeSeconds)
       .input("completedAt", sql.DateTime2, new Date(lr.completedAt))
       .query(`
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[LevelRecord] WHERE [MongoId]=@mongoId)
-        INSERT INTO [dbo].[LevelRecord] ([MongoId],[GameId],[Level],[CompletionTimeSeconds],[CompletedAt])
+        IF NOT EXISTS (SELECT 1 FROM [dbo].[XCOOP42_LevelRecord] WHERE [MongoId]=@mongoId)
+        INSERT INTO [dbo].[XCOOP42_LevelRecord] ([MongoId],[GameId],[Level],[CompletionTimeSeconds],[CompletedAt])
         VALUES (@mongoId,@gameId,@level,@completionTime,@completedAt);
       `);
 
     const lrResult = await pool
       .request()
       .input("mongoId", sql.NVarChar(50), lr._id || null)
-      .query("SELECT [Id] FROM [dbo].[LevelRecord] WHERE [MongoId]=@mongoId");
+      .query("SELECT [Id] FROM [dbo].[XCOOP42_LevelRecord] WHERE [MongoId]=@mongoId");
     const levelRecordId = lrResult.recordset[0]?.Id;
     if (!levelRecordId) continue;
 
@@ -203,8 +202,8 @@ async function syncLevelRecords(pool, records) {
         .input("lrId", sql.Int, levelRecordId)
         .input("playerId", sql.Int, playerId)
         .query(`
-          IF NOT EXISTS (SELECT 1 FROM [dbo].[LevelRecordPlayer] WHERE [LevelRecordId]=@lrId AND [PlayerId]=@playerId)
-          INSERT INTO [dbo].[LevelRecordPlayer] ([LevelRecordId],[PlayerId]) VALUES (@lrId,@playerId);
+          IF NOT EXISTS (SELECT 1 FROM [dbo].[XCOOP42_LevelRecordPlayer] WHERE [LevelRecordId]=@lrId AND [PlayerId]=@playerId)
+          INSERT INTO [dbo].[XCOOP42_LevelRecordPlayer] ([LevelRecordId],[PlayerId]) VALUES (@lrId,@playerId);
         `);
     }
   }
@@ -216,12 +215,11 @@ async function syncLevelRecords(pool, records) {
 // ═══════════════════════════════════════════════════════════════════════════
 async function main() {
   const start = Date.now();
-  logger.info("═══ Starting API → Navision sync ═══");
+  logger.info("═══ Starting API → Navision sync (XCOOP42_ prefix) ═══");
 
   const pool = await connect();
 
   try {
-    // Fetch all data in a single request via /api/schema
     logger.info("Fetching full schema from mock API…");
     const schema = await api.fetchSchema();
 
@@ -236,7 +234,6 @@ async function main() {
       "Data fetched"
     );
 
-    // Sync in FK dependency order
     await syncCategories(pool, schema.categories);
     await syncPlayers(pool, schema.players);
     await syncGames(pool, schema.games);

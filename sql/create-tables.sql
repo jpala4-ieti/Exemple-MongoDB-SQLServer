@@ -1,6 +1,7 @@
 -- ============================================================================
 -- Navision Game Database – Table Creation Script
 -- Cooperative Platformer: API → SQL Server migration target
+-- PREFIX: XCOOP42_ to avoid collisions with existing data
 -- ============================================================================
 
 IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'NavisionGameDB')
@@ -13,18 +14,18 @@ USE [NavisionGameDB];
 GO
 
 -- ─── 1. Player Categories ───────────────────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PlayerCategory')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_PlayerCategory')
 BEGIN
-    CREATE TABLE [dbo].[PlayerCategory] (
+    CREATE TABLE [dbo].[XCOOP42_PlayerCategory] (
         [Code]            NVARCHAR(10)   NOT NULL,
         [Name]            NVARCHAR(50)   NOT NULL,
         [MinGamesPlayed]  INT            NOT NULL DEFAULT 0,
         [CreatedAt]       DATETIME2      NOT NULL DEFAULT SYSUTCDATETIME(),
 
-        CONSTRAINT [PK_PlayerCategory] PRIMARY KEY ([Code])
+        CONSTRAINT [PK_XCOOP42_PlayerCategory] PRIMARY KEY ([Code])
     );
 
-    INSERT INTO [dbo].[PlayerCategory] ([Code], [Name], [MinGamesPlayed])
+    INSERT INTO [dbo].[XCOOP42_PlayerCategory] ([Code], [Name], [MinGamesPlayed])
     VALUES
         ('JUN', 'Junior',  0),
         ('SEN', 'Senior',  10),
@@ -33,9 +34,9 @@ END
 GO
 
 -- ─── 2. Players ─────────────────────────────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Player')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_Player')
 BEGIN
-    CREATE TABLE [dbo].[Player] (
+    CREATE TABLE [dbo].[XCOOP42_Player] (
         [Id]                    INT            IDENTITY(1,1) NOT NULL,
         [MongoId]               NVARCHAR(50)   NULL,
         [Nickname]              NVARCHAR(100)  NOT NULL,
@@ -47,18 +48,18 @@ BEGIN
         [UpdatedAt]             DATETIME2      NULL,
         [SyncedAt]              DATETIME2      NOT NULL DEFAULT SYSUTCDATETIME(),
 
-        CONSTRAINT [PK_Player]             PRIMARY KEY ([Id]),
-        CONSTRAINT [UQ_Player_Nickname]    UNIQUE ([Nickname]),
-        CONSTRAINT [FK_Player_Category]    FOREIGN KEY ([CategoryCode])
-                                           REFERENCES [dbo].[PlayerCategory]([Code])
+        CONSTRAINT [PK_XCOOP42_Player]          PRIMARY KEY ([Id]),
+        CONSTRAINT [UQ_XCOOP42_Player_Nickname] UNIQUE ([Nickname]),
+        CONSTRAINT [FK_XCOOP42_Player_Category] FOREIGN KEY ([CategoryCode])
+                                                REFERENCES [dbo].[XCOOP42_PlayerCategory]([Code])
     );
 END
 GO
 
 -- ─── 3. Games ────────────────────────────────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Game')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_Game')
 BEGIN
-    CREATE TABLE [dbo].[Game] (
+    CREATE TABLE [dbo].[XCOOP42_Game] (
         [Id]                    INT            IDENTITY(1,1) NOT NULL,
         [MongoId]               NVARCHAR(50)   NULL,
         [Status]                NVARCHAR(20)   NOT NULL,
@@ -70,8 +71,8 @@ BEGIN
         [TotalDurationSeconds]  INT            NULL,
         [SyncedAt]              DATETIME2      NOT NULL DEFAULT SYSUTCDATETIME(),
 
-        CONSTRAINT [PK_Game] PRIMARY KEY ([Id]),
-        CONSTRAINT [CK_Game_Status] CHECK (
+        CONSTRAINT [PK_XCOOP42_Game] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_XCOOP42_Game_Status] CHECK (
             [Status] IN ('waiting','in_progress','completed','abandoned')
         )
     );
@@ -79,26 +80,26 @@ END
 GO
 
 -- ─── 4. Game–Player junction ────────────────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'GamePlayer')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_GamePlayer')
 BEGIN
-    CREATE TABLE [dbo].[GamePlayer] (
+    CREATE TABLE [dbo].[XCOOP42_GamePlayer] (
         [GameId]    INT           NOT NULL,
         [PlayerId]  INT           NOT NULL,
         [JoinedAt]  DATETIME2     NULL,
 
-        CONSTRAINT [PK_GamePlayer]         PRIMARY KEY ([GameId], [PlayerId]),
-        CONSTRAINT [FK_GamePlayer_Game]    FOREIGN KEY ([GameId])
-                                           REFERENCES [dbo].[Game]([Id]),
-        CONSTRAINT [FK_GamePlayer_Player]  FOREIGN KEY ([PlayerId])
-                                           REFERENCES [dbo].[Player]([Id])
+        CONSTRAINT [PK_XCOOP42_GamePlayer]         PRIMARY KEY ([GameId], [PlayerId]),
+        CONSTRAINT [FK_XCOOP42_GamePlayer_Game]    FOREIGN KEY ([GameId])
+                                                   REFERENCES [dbo].[XCOOP42_Game]([Id]),
+        CONSTRAINT [FK_XCOOP42_GamePlayer_Player]  FOREIGN KEY ([PlayerId])
+                                                   REFERENCES [dbo].[XCOOP42_Player]([Id])
     );
 END
 GO
 
 -- ─── 5. Movements ───────────────────────────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movement')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_Movement')
 BEGIN
-    CREATE TABLE [dbo].[Movement] (
+    CREATE TABLE [dbo].[XCOOP42_Movement] (
         [Id]          BIGINT         IDENTITY(1,1) NOT NULL,
         [MongoId]     NVARCHAR(50)   NULL,
         [GameId]      INT            NOT NULL,
@@ -110,25 +111,25 @@ BEGIN
         [Timestamp]   DATETIME2      NOT NULL,
         [SyncedAt]    DATETIME2      NOT NULL DEFAULT SYSUTCDATETIME(),
 
-        CONSTRAINT [PK_Movement]        PRIMARY KEY ([Id]),
-        CONSTRAINT [FK_Movement_Game]   FOREIGN KEY ([GameId])
-                                        REFERENCES [dbo].[Game]([Id]),
-        CONSTRAINT [FK_Movement_Player] FOREIGN KEY ([PlayerId])
-                                        REFERENCES [dbo].[Player]([Id]),
-        CONSTRAINT [CK_Movement_Action] CHECK (
+        CONSTRAINT [PK_XCOOP42_Movement]        PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_XCOOP42_Movement_Game]   FOREIGN KEY ([GameId])
+                                                REFERENCES [dbo].[XCOOP42_Game]([Id]),
+        CONSTRAINT [FK_XCOOP42_Movement_Player] FOREIGN KEY ([PlayerId])
+                                                REFERENCES [dbo].[XCOOP42_Player]([Id]),
+        CONSTRAINT [CK_XCOOP42_Movement_Action] CHECK (
             [Action] IN ('move_left','move_right','jump','pick_key','open_door')
         )
     );
 
-    CREATE INDEX [IX_Movement_Game]   ON [dbo].[Movement] ([GameId]);
-    CREATE INDEX [IX_Movement_Player] ON [dbo].[Movement] ([PlayerId]);
+    CREATE INDEX [IX_XCOOP42_Movement_Game]   ON [dbo].[XCOOP42_Movement] ([GameId]);
+    CREATE INDEX [IX_XCOOP42_Movement_Player] ON [dbo].[XCOOP42_Movement] ([PlayerId]);
 END
 GO
 
 -- ─── 6. Level Records ───────────────────────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LevelRecord')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_LevelRecord')
 BEGIN
-    CREATE TABLE [dbo].[LevelRecord] (
+    CREATE TABLE [dbo].[XCOOP42_LevelRecord] (
         [Id]                     INT        IDENTITY(1,1) NOT NULL,
         [MongoId]                NVARCHAR(50) NULL,
         [GameId]                 INT          NOT NULL,
@@ -137,25 +138,25 @@ BEGIN
         [CompletedAt]            DATETIME2    NOT NULL,
         [SyncedAt]               DATETIME2    NOT NULL DEFAULT SYSUTCDATETIME(),
 
-        CONSTRAINT [PK_LevelRecord]      PRIMARY KEY ([Id]),
-        CONSTRAINT [FK_LevelRecord_Game] FOREIGN KEY ([GameId])
-                                         REFERENCES [dbo].[Game]([Id])
+        CONSTRAINT [PK_XCOOP42_LevelRecord]      PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_XCOOP42_LevelRecord_Game] FOREIGN KEY ([GameId])
+                                                 REFERENCES [dbo].[XCOOP42_Game]([Id])
     );
 END
 GO
 
 -- ─── 7. Level Record – Players junction ─────────────────────────────────────
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LevelRecordPlayer')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_LevelRecordPlayer')
 BEGIN
-    CREATE TABLE [dbo].[LevelRecordPlayer] (
+    CREATE TABLE [dbo].[XCOOP42_LevelRecordPlayer] (
         [LevelRecordId]  INT   NOT NULL,
         [PlayerId]       INT   NOT NULL,
 
-        CONSTRAINT [PK_LevelRecordPlayer]       PRIMARY KEY ([LevelRecordId], [PlayerId]),
-        CONSTRAINT [FK_LRP_LevelRecord]         FOREIGN KEY ([LevelRecordId])
-                                                REFERENCES [dbo].[LevelRecord]([Id]),
-        CONSTRAINT [FK_LRP_Player]              FOREIGN KEY ([PlayerId])
-                                                REFERENCES [dbo].[Player]([Id])
+        CONSTRAINT [PK_XCOOP42_LevelRecordPlayer] PRIMARY KEY ([LevelRecordId], [PlayerId]),
+        CONSTRAINT [FK_XCOOP42_LRP_LevelRecord]   FOREIGN KEY ([LevelRecordId])
+                                                   REFERENCES [dbo].[XCOOP42_LevelRecord]([Id]),
+        CONSTRAINT [FK_XCOOP42_LRP_Player]         FOREIGN KEY ([PlayerId])
+                                                   REFERENCES [dbo].[XCOOP42_Player]([Id])
     );
 END
 GO
@@ -164,11 +165,11 @@ GO
 -- VIEWS – ERP Indicators
 -- ============================================================================
 
-IF EXISTS (SELECT * FROM sys.views WHERE name = 'vw_LevelsCompletedByCategory')
-    DROP VIEW [dbo].[vw_LevelsCompletedByCategory];
+IF EXISTS (SELECT * FROM sys.views WHERE name = 'XCOOP42_vw_LevelsCompletedByCategory')
+    DROP VIEW [dbo].[XCOOP42_vw_LevelsCompletedByCategory];
 GO
 
-CREATE VIEW [dbo].[vw_LevelsCompletedByCategory]
+CREATE VIEW [dbo].[XCOOP42_vw_LevelsCompletedByCategory]
 AS
 SELECT
     pc.[Code]                       AS CategoryCode,
@@ -176,16 +177,16 @@ SELECT
     COUNT(DISTINCT p.[Id])          AS PlayerCount,
     SUM(p.[TotalLevelsCompleted])   AS TotalLevelsCompleted,
     AVG(CAST(p.[TotalLevelsCompleted] AS FLOAT)) AS AvgLevelsPerPlayer
-FROM [dbo].[Player] p
-INNER JOIN [dbo].[PlayerCategory] pc ON p.[CategoryCode] = pc.[Code]
+FROM [dbo].[XCOOP42_Player] p
+INNER JOIN [dbo].[XCOOP42_PlayerCategory] pc ON p.[CategoryCode] = pc.[Code]
 GROUP BY pc.[Code], pc.[Name];
 GO
 
-IF EXISTS (SELECT * FROM sys.views WHERE name = 'vw_AvgTimePerLevel')
-    DROP VIEW [dbo].[vw_AvgTimePerLevel];
+IF EXISTS (SELECT * FROM sys.views WHERE name = 'XCOOP42_vw_AvgTimePerLevel')
+    DROP VIEW [dbo].[XCOOP42_vw_AvgTimePerLevel];
 GO
 
-CREATE VIEW [dbo].[vw_AvgTimePerLevel]
+CREATE VIEW [dbo].[XCOOP42_vw_AvgTimePerLevel]
 AS
 SELECT
     lr.[Level],
@@ -193,15 +194,15 @@ SELECT
     AVG(lr.[CompletionTimeSeconds])         AS AvgSeconds,
     MIN(lr.[CompletionTimeSeconds])         AS BestTimeSeconds,
     MAX(lr.[CompletionTimeSeconds])         AS WorstTimeSeconds
-FROM [dbo].[LevelRecord] lr
+FROM [dbo].[XCOOP42_LevelRecord] lr
 GROUP BY lr.[Level];
 GO
 
-IF EXISTS (SELECT * FROM sys.views WHERE name = 'vw_PlayerRecords')
-    DROP VIEW [dbo].[vw_PlayerRecords];
+IF EXISTS (SELECT * FROM sys.views WHERE name = 'XCOOP42_vw_PlayerRecords')
+    DROP VIEW [dbo].[XCOOP42_vw_PlayerRecords];
 GO
 
-CREATE VIEW [dbo].[vw_PlayerRecords]
+CREATE VIEW [dbo].[XCOOP42_vw_PlayerRecords]
 AS
 SELECT
     p.[Nickname],
@@ -216,18 +217,18 @@ SELECT
     END                             AS AvgSecondsPerGame,
     bestLR.[BestTime]               AS PersonalBestSeconds,
     bestLR.[BestLevel]              AS PersonalBestLevel
-FROM [dbo].[Player] p
-INNER JOIN [dbo].[PlayerCategory] pc ON p.[CategoryCode] = pc.[Code]
+FROM [dbo].[XCOOP42_Player] p
+INNER JOIN [dbo].[XCOOP42_PlayerCategory] pc ON p.[CategoryCode] = pc.[Code]
 OUTER APPLY (
     SELECT TOP 1
         lr.[CompletionTimeSeconds]  AS [BestTime],
         lr.[Level]                  AS [BestLevel]
-    FROM [dbo].[LevelRecord] lr
-    INNER JOIN [dbo].[LevelRecordPlayer] lrp ON lr.[Id] = lrp.[LevelRecordId]
+    FROM [dbo].[XCOOP42_LevelRecord] lr
+    INNER JOIN [dbo].[XCOOP42_LevelRecordPlayer] lrp ON lr.[Id] = lrp.[LevelRecordId]
     WHERE lrp.[PlayerId] = p.[Id]
     ORDER BY lr.[CompletionTimeSeconds] ASC
 ) bestLR;
 GO
 
-PRINT 'All tables, indexes, and indicator views created successfully.';
+PRINT 'All XCOOP42_ tables, indexes, and indicator views created successfully.';
 GO
