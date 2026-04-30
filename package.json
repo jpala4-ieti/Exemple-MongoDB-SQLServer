@@ -8,8 +8,9 @@
     "dev": "npx nodemon src/server.js",
     "migrate": "node src/scripts/create-tables.js",
     "sync": "node src/scripts/sync-to-navision.js",
+    "test:db": "node src/scripts/test-connection.js",
     "ws:client": "node src/clients/ws-client.js",
-    "setup": "npm run migrate && npm run sync"
+    "setup": "npm run test:db && npm run migrate && npm run sync"
   },
   "keywords": ["mongodb", "sqlserver", "navision", "erp", "websocket", "mock-api"],
   "license": "MIT",

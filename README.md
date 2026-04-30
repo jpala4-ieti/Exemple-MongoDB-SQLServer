@@ -110,6 +110,7 @@ node src/clients/ws-client.js MyPlayerName
 ### 6. Sync to SQL Server (requires SQL Server)
 
 ```bash
+npm run test:db   # Test connection and check XCOOP42_* tables
 npm run migrate   # Creates XCOOP42_* tables
 npm run sync      # Fetches from API → inserts into XCOOP42_* tables
 ```
@@ -207,6 +208,7 @@ SELECT * FROM [dbo].[XCOOP42_vw_PlayerRecords];
 | `npm start`         | Start the mock API + WebSocket server          |
 | `npm run dev`       | Start with auto-reload (nodemon)               |
 | `npm run ws:client` | Run the example WebSocket client               |
+| `npm run test:db`   | Test SQL Server connection + check tables      |
 | `npm run migrate`   | Create XCOOP42_* SQL Server tables             |
 | `npm run sync`      | Fetch from API → insert into XCOOP42_* tables  |
 | `npm run setup`     | migrate + sync (server must be running)        |
