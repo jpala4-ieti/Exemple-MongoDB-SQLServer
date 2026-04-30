@@ -1,0 +1,30 @@
+{
+  "name": "mongo-to-navision-sync",
+  "version": "2.0.0",
+  "description": "Mock REST API + WebSocket server for cooperative platformer game data, with SQL Server (Navision) sync pipeline",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "npx nodemon src/server.js",
+    "migrate": "node src/scripts/create-tables.js",
+    "sync": "node src/scripts/sync-to-navision.js",
+    "ws:client": "node src/clients/ws-client.js",
+    "setup": "npm run migrate && npm run sync"
+  },
+  "keywords": ["mongodb", "sqlserver", "navision", "erp", "websocket", "mock-api"],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "mssql": "^11.0.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
