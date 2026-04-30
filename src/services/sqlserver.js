@@ -13,23 +13,19 @@ async function connect() {
   if (pool) return pool;
 
   const sqlConfig = {
-    server: config.sql.server,
-    database: config.sql.database,
     driver: "msnodesqlv8",
-    options: {
-      trustedConnection: true,
-      trustServerCertificate:
-        config.sql.options.trustServerCertificate,
-    },
+    connectionString:
+      `Driver={ODBC Driver 11 for SQL Server};` +
+      `Server=${config.sql.server};` +
+      `Database=${config.sql.database};` +
+      `Trusted_Connection=yes;`,
     pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
     requestTimeout: 30000,
-    // Optional: override connection string for named instances
-    // connectionString: `Driver={ODBC Driver 17 for SQL Server};Server=${config.sql.server};Database=${config.sql.database};Trusted_Connection=yes;`,
   };
 
   logger.info(
-    { server: sqlConfig.server, database: sqlConfig.database },
-    "Connecting to SQL Server (Windows Auth / msnodesqlv8)…"
+    { server: config.sql.server, database: config.sql.database },
+    "Connecting to SQL Server 2014 (Windows Auth / ODBC Driver 11)…"
   );
 
   pool = await sql.connect(sqlConfig);

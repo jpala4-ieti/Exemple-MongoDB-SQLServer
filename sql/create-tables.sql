@@ -2,16 +2,8 @@
 -- Navision Game Database – Table Creation Script
 -- Cooperative Platformer: API → SQL Server migration target
 -- PREFIX: XCOOP42_ to avoid collisions with existing data
+-- NOTE: Database is already selected via the connection string (.env)
 -- ============================================================================
-
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'NavisionGameDB')
-BEGIN
-    CREATE DATABASE [NavisionGameDB];
-END
-GO
-
-USE [NavisionGameDB];
-GO
 
 -- ─── 1. Player Categories ───────────────────────────────────────────────────
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'XCOOP42_PlayerCategory')

@@ -1,10 +1,21 @@
 /**
  * Centralized configuration loaded from environment variables.
- * Only SQL_* vars are required when running the sync script;
- * the mock server itself needs no external services.
+ * Validates that all required values are present at startup.
  */
 
 require("dotenv").config();
+
+const requiredVars = [
+  "SQL_SERVER",
+  "SQL_DATABASE",
+];
+
+const missing = requiredVars.filter((v) => !process.env[v]);
+if (missing.length > 0) {
+  console.error(`\n  ❌  Missing required env vars: ${missing.join(", ")}`);
+  console.error("     Copy .env.example to .env and fill in the values.\n");
+  process.exit(1);
+}
 
 module.exports = {
   port: parseInt(process.env.PORT || "3000", 10),
@@ -19,12 +30,8 @@ module.exports = {
   },
 
   sql: {
-    server: process.env.SQL_SERVER || "localhost",
-    database: process.env.SQL_DATABASE || "NavisionGameDB",
-    options: {
-      trustServerCertificate:
-        process.env.SQL_TRUST_SERVER_CERTIFICATE !== "false",
-    },
+    server: process.env.SQL_SERVER,
+    database: process.env.SQL_DATABASE,
   },
 
   logLevel: process.env.LOG_LEVEL || "info",
