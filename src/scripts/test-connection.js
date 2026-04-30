@@ -197,7 +197,7 @@ async function main() {
   console.log("║        SQL Server Connection Test (XCOOP42_)           ║");
   console.log("╚══════════════════════════════════════════════════════════╝");
 
-  console.log(`\n  Target: ${config.sql.user}@${config.sql.server}:${config.sql.port}/${config.sql.database}`);
+  console.log(`\n  Target: ${config.sql.server}/${config.sql.database} (Windows Authentication)`);
 
   let pool;
   try {
@@ -206,9 +206,9 @@ async function main() {
     fail(`Cannot connect to SQL Server: ${err.message}`);
     console.log("\n  Checklist:");
     console.log("    • Is SQL Server running?");
-    console.log("    • Are the credentials in .env correct?");
-    console.log("    • Is TCP/IP enabled on the SQL Server instance?");
-    console.log(`    • Is port ${config.sql.port} open?\n`);
+    console.log("    • Is the ODBC Driver for SQL Server installed?");
+    console.log("    • Does your Windows user have access to the database?");
+    console.log("    • Is TCP/IP enabled on the SQL Server instance?\n");
     process.exit(1);
   }
 

@@ -53,7 +53,7 @@ mongo-to-navision/
     │   └── handler.js             # WebSocket event handlers
     ├── services/
     │   ├── api-client.js          # Axios client for sync script
-    │   └── sqlserver.js           # mssql connection singleton
+    │   └── sqlserver.js           # mssql + msnodesqlv8 (Windows Auth)
     ├── scripts/
     │   ├── create-tables.js       # Runs XCOOP42_* DDL
     │   └── sync-to-navision.js    # API → XCOOP42_* SQL upserts

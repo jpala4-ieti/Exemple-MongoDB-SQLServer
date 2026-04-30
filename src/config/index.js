@@ -20,12 +20,8 @@ module.exports = {
 
   sql: {
     server: process.env.SQL_SERVER || "localhost",
-    port: parseInt(process.env.SQL_PORT || "1433", 10),
     database: process.env.SQL_DATABASE || "NavisionGameDB",
-    user: process.env.SQL_USER || "sa",
-    password: process.env.SQL_PASSWORD || "",
     options: {
-      encrypt: process.env.SQL_ENCRYPT === "true",
       trustServerCertificate:
         process.env.SQL_TRUST_SERVER_CERTIFICATE !== "false",
     },
